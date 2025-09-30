@@ -23,7 +23,7 @@ apply plugin: 'com.android.library'
 
 android {
     namespace 'sk.fourq.otaupdate'
-    compileSdkVersion 33
+    compileSdkVersion 34
 
     defaultConfig {
         minSdkVersion 19
