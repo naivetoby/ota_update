@@ -1,3 +1,6 @@
+# Next
+* Removed the obsolete Android storage permission. APK files are downloaded to app-internal storage.
+
 # 6.0.0
 * Migration to flutter 3.16 and graddle wrapper 8.0+ (evgfilim1)
 * Ability to cancel ongoing download (JustSayBien)

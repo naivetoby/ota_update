@@ -60,7 +60,6 @@ import 'package:ota_update/ota_update.dart';
 Add permissions to AndroidManifest.xml.
 
 ```xml
-<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
 ```
 
@@ -136,8 +135,7 @@ Plugin now allows you to get android ABI platform. If your are building multiple
     * sent when 'execute' method is called before previous run finished
     * event value is null
 * PERMISSION_NOT_GRANTED_ERROR: 
-    * sent when user refused to grant required permissions
-    * event value is null.
+    * retained for status-code compatibility; no longer emitted on Android
 * DOWNLOAD_ERROR
     * sent when download crashed.
 * CHECKSUM_ERROR (android only)

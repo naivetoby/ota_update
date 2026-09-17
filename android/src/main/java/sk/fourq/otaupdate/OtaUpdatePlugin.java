@@ -1,11 +1,8 @@
 package sk.fourq.otaupdate;
 
-import android.Manifest;
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -13,15 +10,10 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
-import io.flutter.embedding.engine.plugins.activity.ActivityAware;
-import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.EventChannel;
-import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
@@ -49,7 +41,7 @@ import java.util.Map;
  * OtaUpdatePlugin
  */
 @TargetApi(Build.VERSION_CODES.M)
-public class OtaUpdatePlugin implements FlutterPlugin, ActivityAware, EventChannel.StreamHandler, MethodCallHandler, PluginRegistry.RequestPermissionsResultListener, ProgressListener {
+public class OtaUpdatePlugin implements FlutterPlugin, EventChannel.StreamHandler, MethodCallHandler, ProgressListener {
 
     //CONSTANTS
     private static final String BYTES_DOWNLOADED = "BYTES_DOWNLOADED";
@@ -67,7 +59,6 @@ public class OtaUpdatePlugin implements FlutterPlugin, ActivityAware, EventChann
 
     //BASIC PLUGIN STATE
     private Context context;
-    private Activity activity;
     private EventChannel.EventSink progressSink;
     private Handler handler;
     private String androidProviderAuthority;
@@ -91,29 +82,6 @@ public class OtaUpdatePlugin implements FlutterPlugin, ActivityAware, EventChann
     @Override
     public void onDetachedFromEngine(FlutterPluginBinding binding) {
         Log.d(TAG, "onDetachedFromEngine");
-    }
-
-    //FLUTTER EMBEDDING V2 - ACTIVITY BINDING. PLUGIN USES ACTIVITY FOR PERMISSION REQUESTS
-    @Override
-    public void onAttachedToActivity(ActivityPluginBinding activityPluginBinding) {
-        Log.d(TAG, "onAttachedToActivity");
-        activityPluginBinding.addRequestPermissionsResultListener(this);
-        activity = activityPluginBinding.getActivity();
-    }
-
-    @Override
-    public void onDetachedFromActivityForConfigChanges() {
-        Log.d(TAG, "onDetachedFromActivityForConfigChanges");
-    }
-
-    @Override
-    public void onReattachedToActivityForConfigChanges(ActivityPluginBinding activityPluginBinding) {
-        Log.d(TAG, "onReattachedToActivityForConfigChanges");
-    }
-
-    @Override
-    public void onDetachedFromActivity() {
-        Log.d(TAG, "onDetachedFromActivity");
     }
 
     //METHOD LISTENER
@@ -169,19 +137,7 @@ public class OtaUpdatePlugin implements FlutterPlugin, ActivityAware, EventChann
             androidProviderAuthority = context.getPackageName() + "." + "ota_update_provider";
         }
 
-        int SKIP_WRITE_EXTERNAL_STORAGE_SDK_INT = 33;
-
-        // WRITE_EXTERNAL_STORAGE permission always returns false on sdk 33
-        boolean skipWriteExternalStorage = android.os.Build.VERSION.SDK_INT >= SKIP_WRITE_EXTERNAL_STORAGE_SDK_INT;
-
-        if (skipWriteExternalStorage || PackageManager.PERMISSION_GRANTED == ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
-            executeDownload();
-        } else {
-            String[] permissions = {
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-            };
-            ActivityCompat.requestPermissions(activity, permissions, 0);
-        }
+        executeDownload();
     }
 
     @Override
@@ -190,27 +146,8 @@ public class OtaUpdatePlugin implements FlutterPlugin, ActivityAware, EventChann
         progressSink = null;
     }
 
-    @Override
-    public boolean onRequestPermissionsResult(int requestCode, String[] strings, int[] grantResults) {
-        Log.d(TAG, "REQUEST PERMISSIONS RESULT RECEIVED");
-        if (requestCode == 0 && grantResults.length > 0) {
-            for (int grantResult : grantResults) {
-                if (grantResult != PackageManager.PERMISSION_GRANTED) {
-                    reportError(OtaStatus.PERMISSION_NOT_GRANTED_ERROR, "Permission not granted", null);
-                    return false;
-                }
-            }
-            executeDownload();
-            return true;
-        } else {
-            reportError(OtaStatus.PERMISSION_NOT_GRANTED_ERROR, "Permission not granted", null);
-            return false;
-        }
-    }
-
     /**
-     * Execute download and start installation. This method is called either from onListen method
-     * or from onRequestPermissionsResult if user had to grant permissions.
+     * Execute download and start installation.
      */
     private void executeDownload() {
         try {
